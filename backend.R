@@ -15,6 +15,24 @@ library(rsconnect)
 #                         gene_name %in% gene_names),
 #         file = "dependencies/MANE_genes_CLIP_sites.rds")
 
+get_gene_list_per_RBP <- function(target_RBP) {
+  
+  message(target_RBP)
+
+  RBP_genes <- introns_CLIP_sites %>%
+    filter(RBP == target_RBP) %>%
+    pull(gene_name) %>% 
+    sort  %>% as.list()
+  
+  
+  gene_choices <- c(RBP_genes)
+  names(gene_choices) <- c(RBP_genes)
+  
+  gene_choices %>% 
+    return()
+    
+}
+
 visualiseCLIP <- function(target_RBP, target_gene, allRBPs) {
   
   # target_RBP <- "TARDBP"
@@ -66,7 +84,7 @@ visualiseCLIP <- function(target_RBP, target_gene, allRBPs) {
       ggplot() +
         theme_void(base_size = 14) +
         geom_text(aes(0,0,
-                      label=paste0("Too many RBPs to plot (>100 labels). Please, consider reducing the number of RBPs selected."))) %>%
+                      label=paste0("Too many RBPs to plot (>100 labels). Please, consider reducing the number of RBPs selected.\nBinding sites for the current selection can be downloaded from the table below."))) %>%
         return()
       
     
@@ -129,7 +147,7 @@ visualiseCLIP <- function(target_RBP, target_gene, allRBPs) {
             legend.text = element_text(size = "13"),
             legend.title = element_text(size = "13")) +
       xlab(paste0("Genomic position (", MANE_exons$seqnames %>% unique() ,")")) + 
-      ylab("MANE Transcript") +
+      ylab(paste0("MANE Transcript of gene ", target_gene)) +
       guides(fill = guide_legend(element_blank())) %>%
       return()
   }
@@ -139,7 +157,7 @@ visualiseCLIP <- function(target_RBP, target_gene, allRBPs) {
 
 
 
-tableCLIP <- function(target_RBP, target_gene, allRBPs) {
+tableCLIP <- function(target_RBP, target_gene, allRBPs = F) {
   
   # target_RBP <- "TARDBP"
   # target_gene <- "GBA"
@@ -176,7 +194,9 @@ tableCLIP <- function(target_RBP, target_gene, allRBPs) {
                   binding_width = iCLIP_width,
                   strand = iCLIP_strand,
                   RBP) %>%
-    drop_na()
+    mutate(gene_name = target_gene) %>%
+    inner_join(y = genes_hg38,
+               by = "gene_name")
   
   
   if ( RBP_CLIP_sites %>% nrow() == 0 ) {
@@ -213,5 +233,21 @@ names(gene_choices) <- c(gene_names) %>% as.list()
 
 ## 3. Load dependecies ----------------------------------------------------------------------
 
+genes_hg38 <- readRDS(file = "dependencies/all_genes_hg38.rds")
+# genes_hg38 <- rtracklayer::import(con = "~/PROJECTS/splicing-accuracy-manuscript/dependencies/Homo_sapiens.GRCh38.105.chr.gtf")
+# genes_hg38 %>% 
+#   as_tibble() %>%
+#   filter(type == "gene") %>%
+#   mutate(gene_coordinates = paste0(seqnames, ":", start, "-", end, ":", strand))%>%
+#   dplyr::select(gene_coordinates, gene_name)  %>%
+#   drop_na() %>%
+#   distinct(gene_name, .keep_all = T) 
+# saveRDS(object = genes_hg38 %>% 
+#           as_tibble() %>%
+#           filter(type == "gene") %>%
+#           mutate(gene_coordinates = paste0(seqnames, ":", start, "-", end, ":", strand))%>%
+#           dplyr::select(gene_coordinates, gene_name)  %>%
+#           drop_na() %>%
+#           distinct(gene_name, .keep_all = T), file = "dependencies/all_genes_hg38.rds")
 MANE <- readRDS(file = "dependencies/MANE_genes_CLIP_sites.rds")
 introns_CLIP_sites <- readRDS(file = "dependencies/all_introns_CLIP_sites.rds")
